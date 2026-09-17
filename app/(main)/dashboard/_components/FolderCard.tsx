@@ -1,4 +1,6 @@
 import { Folder, MoreVertical, Users } from "lucide-react";
+import Link from "next/link";
+import CardActionsDropdown from "./CardActionsDropdown";
 
 interface FolderProps {
   id: number;
@@ -11,21 +13,21 @@ interface FolderProps {
 
 export default function FolderCard({ folder }: { folder: FolderProps }) {
   return (
-    <div className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-300 hover:shadow-md cursor-pointer">
+    <div className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-300 hover:shadow-md cursor-pointer min-h-60">
       <div className="flex items-start justify-between">
         <div className="relative flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
           <Folder className="h-6 w-6 fill-current opacity-20" />
           <Folder className="absolute h-6 w-6" />
         </div>
-        <button className="text-slate-400 hover:text-slate-600 focus:outline-none p-1.5 rounded-md hover:bg-slate-50 transition-colors">
-          <MoreVertical className="h-4 w-4" />
-        </button>
+        <CardActionsDropdown />
       </div>
 
       <div className="mt-5">
-        <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-          {folder.name}
-        </h3>
+        <Link href={`/dashboard/${folder.id}`}>
+          <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 hover:underline">
+            {folder.name}
+          </h3>
+        </Link>
         <div className="mt-1.5 flex items-center text-xs text-slate-500 space-x-2">
           <span>{folder.items} items</span>
           <span className="text-slate-300">&bull;</span>

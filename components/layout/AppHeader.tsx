@@ -18,18 +18,18 @@ export function AppHeader() {
               </span>
             </Link>
             <div className="hidden sm:block w-px h-6 bg-slate-200"></div>
-            <div className="text-sm font-medium text-slate-700">
-              Welcome, John Doe
-            </div>
+          </div>
+          <div className="text-sm font-medium text-slate-700">
+            Welcome, John Doe
           </div>
 
           {/* Right: Create Folder Button */}
-          <div>
+          {/* <div>
             <Button>
               <Plus className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Create Folder</span>
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </header>

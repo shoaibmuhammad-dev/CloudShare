@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import Logout from "./Logout";
 
 export function AppNav() {
   const pathname = usePathname();
@@ -14,7 +15,7 @@ export function AppNav() {
 
   return (
     <div className="bg-white border-b border-slate-200 shadow-sm shadow-slate-100/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
           {links.map((link) => {
             const isActive =
@@ -35,6 +36,8 @@ export function AppNav() {
             );
           })}
         </nav>
+
+        <Logout />
       </div>
     </div>
   );
