@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { FolderList } from "./_components/FolderList";
-import { Plus } from "lucide-react";
+import { CreateFolderModal } from "./_components/CreateFolderModal";
 
 export const metadata = {
   title: "Dashboard | CloudShare",
@@ -20,10 +19,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div>
-          <Button>
-            <Plus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Create Folder</span>
-          </Button>
+          <CreateFolderModal />
         </div>
       </section>
 

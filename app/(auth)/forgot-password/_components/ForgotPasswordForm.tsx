@@ -20,6 +20,8 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export function ForgotPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string>("");
 
   const {
     register,
@@ -34,14 +36,39 @@ export function ForgotPasswordForm() {
 
   const onSubmit: SubmitHandler<ForgotPasswordFormData> = async (data) => {
     setIsSubmitting(true);
+    setFormError(null);
 
-    // Simulate API call
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-    console.log("Forgot password data:", data);
+      // The API responds with the same generic message whether or not the
+      // email is registered (by design, to avoid leaking which emails
+      // exist), so a 200 here always means "show the success state" —
+      // never "we found your account".
+      const resData = await res.json().catch(() => ({}));
 
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
+      if (!res.ok) {
+        setFormError(
+          resData.error ?? "Something went wrong. Please try again.",
+        );
+        return;
+      }
+
+      setSubmittedEmail(data.email);
+      setSubmitSuccess(true);
+    } catch {
+      setFormError(
+        "Couldn't reach the server. Check your connection and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitSuccess) {
@@ -55,17 +82,33 @@ export function ForgotPasswordForm() {
           Check your email
         </h3>
 
-        <p className="mb-6 text-sm text-slate-600">
-          We sent a password reset link to your email. Please click the link to
-          reset your password.
+        <p className="mb-2 text-sm text-slate-600">
+          If an account exists for{" "}
+          <span className="font-medium">{submittedEmail}</span>, we&apos;ve sent
+          a password reset link. Click it to choose a new password.
         </p>
 
-        <Link href="/login">
-          <Button variant="outline" className="w-full">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to login
-          </Button>
-        </Link>
+        <p className="mb-6 text-xs text-slate-500">
+          The link expires in 30 minutes. Don&apos;t see it? Check your spam
+          folder.
+        </p>
+
+        <div className="space-y-2">
+          <Link href="/login">
+            <Button variant="outline" className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to login
+            </Button>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setSubmitSuccess(false)}
+            className="text-sm font-medium text-slate-500 hover:text-slate-700 hover:underline"
+          >
+            Use a different email
+          </button>
+        </div>
       </div>
     );
   }
@@ -75,7 +118,16 @@ export function ForgotPasswordForm() {
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-5 animate-in fade-in slide-in-from-bottom-4"
     >
-      <div className="space-y-2">
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {formError}
+        </div>
+      )}
+
+      <div className="space-y-2 text-start">
         <Label htmlFor="email">Email address</Label>
 
         <Input

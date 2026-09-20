@@ -49,14 +49,33 @@ export function SignupForm() {
 
   const onSubmit: SubmitHandler<RegisterFormData> = async (data) => {
     setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-    // Simulate API call
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+      if (!response.ok) {
+        alert("Something went wrong. Try again.");
+        return;
+      }
 
-    console.log("Registration data:", data);
-
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
+      alert(
+        "We have sent a verification email. Please check your inbox to verify the email.",
+      );
+      setSubmitSuccess(true);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message || "Something went wrong. Try again.");
+      } else {
+        console.log(error);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitSuccess) {

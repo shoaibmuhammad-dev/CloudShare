@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { signIn } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,10 +21,25 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// Maps the error strings thrown in lib/auth.ts's authorize() to
+// user-facing copy. Anything unrecognized falls back to a generic message.
+const ERROR_MESSAGES: Record<string, string> = {
+  INVALID_CREDENTIALS: "Incorrect email or password.",
+  EMAIL_NOT_VERIFIED: "Please verify your email before logging in.",
+  INVALID_INPUT: "Please check your details and try again.",
+};
+
 export function LoginForm() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">(
+    "idle",
+  );
 
   const {
     register,
@@ -37,26 +55,46 @@ export function LoginForm() {
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setIsSubmitting(true);
+    setFormError(null);
+    setUnverifiedEmail(null);
 
-    // Simulate API call
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
-
-    console.log("Login data:", data);
+    const result = await signIn("credentials", {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    });
 
     setIsSubmitting(false);
-    setSubmitSuccess(true);
+
+    if (result?.error) {
+      setFormError(
+        ERROR_MESSAGES[result.error] ??
+          "Something went wrong. Please try again.",
+      );
+      if (result.error === "EMAIL_NOT_VERIFIED") {
+        setUnverifiedEmail(data.email);
+      }
+      return;
+    }
+
+    // Drop any stale cached data from a previous session, then head in.
+    queryClient.clear();
+    router.push("/dashboard");
+    router.refresh();
   };
 
-  if (submitSuccess) {
-    return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center animate-in fade-in slide-in-from-bottom-4">
-        <h3 className="text-lg font-medium text-green-800">Login Successful</h3>
-
-        <p className="mt-2 text-sm text-green-700">
-          Welcome back! You are being redirected to your dashboard...
-        </p>
-      </div>
-    );
+  async function handleResend() {
+    if (!unverifiedEmail) return;
+    setResendStatus("sending");
+    try {
+      await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: unverifiedEmail }),
+      });
+    } finally {
+      setResendStatus("sent");
+    }
   }
 
   return (
@@ -64,6 +102,28 @@ export function LoginForm() {
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-5 animate-in fade-in slide-in-from-bottom-4"
     >
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          <p>{formError}</p>
+          {unverifiedEmail && (
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendStatus !== "idle"}
+              className="mt-1 font-semibold underline underline-offset-2 disabled:opacity-60"
+            >
+              {resendStatus === "idle" && "Resend verification email"}
+              {resendStatus === "sending" && "Sending…"}
+              {resendStatus === "sent" &&
+                "Verification email sent — check your inbox."}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="email">Email address</Label>
 
