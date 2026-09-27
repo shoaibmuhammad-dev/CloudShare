@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 const PROTECTED_PREFIXES = ["/dashboard", "/profile"];
 const AUTH_PAGES = ["/login", "/signup"];
 
-export async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const token = await getToken({
