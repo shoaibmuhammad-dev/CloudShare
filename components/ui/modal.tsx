@@ -47,7 +47,7 @@ export default function Modal({
               )}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 pt-4 border-b border-slate-100">
+              <div className="flex items-center justify-between px-4 pt-4">
                 <h3 className="text-lg font-bold text-slate-900">{title}</h3>
                 <button
                   onClick={onClose}

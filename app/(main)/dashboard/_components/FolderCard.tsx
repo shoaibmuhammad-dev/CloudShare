@@ -1,6 +1,7 @@
 import { Folder, MoreVertical, Users } from "lucide-react";
 import Link from "next/link";
 import CardActionsDropdown from "./CardActionsDropdown";
+import type { FolderItem } from "@/lib/hooks/useFolders";
 
 interface FolderProps {
   id: number;

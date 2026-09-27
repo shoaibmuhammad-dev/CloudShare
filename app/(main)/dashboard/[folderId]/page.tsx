@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, EllipsisVertical, Upload } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { FileList } from "./_components/FileList";
 import ButtonMenu from "./_components/ButtonMenu";
 
@@ -64,14 +63,6 @@ export default async function FolderPage({ params }: FolderPageProps) {
         </div>
 
         <ButtonMenu />
-
-        {/* <Button className="w-full sm:w-auto">
-          <Upload className="h-4 w-4 sm:mr-2" />
-
-          <span className="hidden sm:inline">Upload File</span>
-
-          <span className="sm:hidden ml-2">Upload</span>
-        </Button> */}
       </div>
 
       <FileList />

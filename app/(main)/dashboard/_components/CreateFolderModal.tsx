@@ -1,58 +1,84 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { FolderPlus, Loader2, Plus } from "lucide-react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import Modal from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { folderNameSchema } from "@/lib/validations/folder";
+import { useCreateFolder } from "@/lib/hooks/useFolders";
 
-interface createFOlderModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+const createFolderFormSchema = z.object({
+  name: folderNameSchema,
+});
+
+type CreateFolderFormData = z.infer<typeof createFolderFormSchema>;
+
+interface CreateFolderModalProps {
+  /** Folder to create inside. Omit, or pass null, for the dashboard root. */
+  parentId?: string | null;
 }
 
-export function CreateFolderModal() {
-  const [folderName, setFolderName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+export function CreateFolderModal({ parentId = null }: CreateFolderModalProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateFolderFormData>({
+    resolver: zodResolver(createFolderFormSchema),
+    defaultValues: { name: "" },
+  });
 
-    if (!folderName.trim()) {
-      setError("Folder name is required");
-      return;
-    }
+  const { mutate: createFolder, isPending: isSubmitting } =
+    useCreateFolder(parentId);
 
-    setIsSubmitting(true);
-    setError("");
+  function handleClose() {
+    if (isSubmitting) return; // don't let the modal close mid-request
+    setIsOpen(false);
+    setFormError(null);
+    reset();
+  }
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  const onSubmit: SubmitHandler<CreateFolderFormData> = (data) => {
+    setFormError(null);
 
-    console.log("Creating folder:", folderName);
-
-    setIsSubmitting(false);
-    setFolderName("");
-    setIsCreateFolderModalOpen(false);
+    createFolder(data.name, {
+      onSuccess: () => {
+        setIsOpen(false);
+        reset();
+      },
+      onError: (err: any) => {
+        // Session died mid-use (expired cookie, logged out in another tab)
+        // -> send them to login instead of showing a confusing inline error.
+        if (err?.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        // 403/404/409/500 and network failures all land here with the
+        // message the API (or fetch itself) provided.
+        setFormError(err?.message ?? "Something went wrong. Please try again.");
+      },
+    });
   };
 
   return (
     <>
-      <Button onClick={() => setIsCreateFolderModalOpen(true)}>
+      <Button onClick={() => setIsOpen(true)}>
         <Plus className="h-4 w-4 sm:mr-2" />
         <span className="hidden sm:inline">Create Folder</span>
       </Button>
 
-      <Modal
-        isOpen={isCreateFolderModalOpen}
-        onClose={() => setIsCreateFolderModalOpen(false)}
-        title=""
-        className=""
-      >
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <Modal isOpen={isOpen} onClose={handleClose} title="" className="">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex flex-col items-center text-center mb-2">
             <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4 text-blue-600">
               <FolderPlus className="h-6 w-6" />
@@ -65,18 +91,23 @@ export function CreateFolderModal() {
             </p>
           </div>
 
+          {formError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {formError}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="folderName">Folder Name</Label>
             <Input
               id="folderName"
               placeholder="e.g. Project Documents"
-              value={folderName}
-              onChange={(e) => {
-                setFolderName(e.target.value);
-                if (error) setError("");
-              }}
-              error={error}
+              error={errors.name?.message}
               autoFocus
+              {...register("name")}
             />
           </div>
 
@@ -84,7 +115,7 @@ export function CreateFolderModal() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsCreateFolderModalOpen(false)}
+              onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancel
